@@ -1290,6 +1290,8 @@ NSLocalizedStringFromTableInBundle((key), nil, [NSBundle bundleWithPath:[[NSBund
         if ([self numberOfPhotos] > 0 && [photo underlyingImage]) {
             [self.delegate photoBrowser:self longPressPhoto:photo inIndex:_currentPageIndex];
         }
+    }else{
+        [self actionButtonPressed:_actionButton];
     }
 }
 
