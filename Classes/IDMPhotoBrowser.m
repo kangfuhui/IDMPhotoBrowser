@@ -1200,6 +1200,10 @@ NSLocalizedStringFromTableInBundle((key), nil, [NSBundle bundleWithPath:[[NSBund
 
 // If permanent then we don't set timers to hide again
 - (void)setControlsHidden:(BOOL)hidden animated:(BOOL)animated permanent:(BOOL)permanent {
+    
+        //ignore hidden
+    hidden = NO;
+    
     // Cancel any timers
     [self cancelControlHiding];
 
@@ -1266,12 +1270,12 @@ NSLocalizedStringFromTableInBundle((key), nil, [NSBundle bundleWithPath:[[NSBund
 
 #pragma mark - Buttons
 
-- (void)doneButtonPressed:(id)sender {
-
+- (void)dismissBrowser
+{
     if ([_delegate respondsToSelector:@selector(willDisappearPhotoBrowser:)]) {
         [_delegate willDisappearPhotoBrowser:self];
     }
-
+    
     if (_senderViewForAnimation && _currentPageIndex == _initalPageIndex) {
         IDMZoomingScrollView *scrollView = [self pageDisplayedAtIndex:_currentPageIndex];
         [self performCloseAnimationWithScrollView:scrollView];
@@ -1281,6 +1285,10 @@ NSLocalizedStringFromTableInBundle((key), nil, [NSBundle bundleWithPath:[[NSBund
         [self prepareForClosePhotoBrowser];
         [self dismissPhotoBrowserAnimated:YES];
     }
+}
+
+- (void)doneButtonPressed:(id)sender {
+    [self dismissBrowser];
 }
 
 - (void)actionButtonPressed:(id)sender {
