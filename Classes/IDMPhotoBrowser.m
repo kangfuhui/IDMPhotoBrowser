@@ -9,7 +9,7 @@
 #import <QuartzCore/QuartzCore.h>
 #import "IDMPhotoBrowser.h"
 #import "IDMZoomingScrollView.h"
-
+#import "SVProgressHUD.h"
 #import "pop/POP.h"
 
 #ifndef IDMPhotoBrowserLocalizedStrings
@@ -1269,9 +1269,7 @@ NSLocalizedStringFromTableInBundle((key), nil, [NSBundle bundleWithPath:[[NSBund
 }
 
 #pragma mark - Buttons
-
-- (void)dismissBrowser
-{
+- (void)dismissBrowser{
     if ([_delegate respondsToSelector:@selector(willDisappearPhotoBrowser:)]) {
         [_delegate willDisappearPhotoBrowser:self];
     }
@@ -1287,71 +1285,87 @@ NSLocalizedStringFromTableInBundle((key), nil, [NSBundle bundleWithPath:[[NSBund
     }
 }
 
-- (void)doneButtonPressed:(id)sender {
-    [self dismissBrowser];
-}
-
-- (void)actionButtonPressed:(id)sender {
+- (void)showActionForCurrentImageView{
     id <IDMPhoto> photo = [self photoAtIndex:_currentPageIndex];
-
+    
     if ([self numberOfPhotos] > 0 && [photo underlyingImage]) {
         if(!_actionButtonTitles)
         {
-            // Activity view
+                // Activity view
             NSMutableArray *activityItems = [NSMutableArray arrayWithObject:[photo underlyingImage]];
             if (photo.caption) [activityItems addObject:photo.caption];
-
+            
             self.activityViewController = [[UIActivityViewController alloc] initWithActivityItems:activityItems applicationActivities:nil];
-
+            
             __typeof__(self) __weak selfBlock = self;
-
-			if (SYSTEM_VERSION_GREATER_THAN_OR_EQUAL_TO(@"8.0"))
-			{
-				[self.activityViewController setCompletionWithItemsHandler:^(NSString *activityType, BOOL completed, NSArray *returnedItems, NSError *activityError) {
-					[selfBlock hideControlsAfterDelay];
-					selfBlock.activityViewController = nil;
-				}];
-			}
-			else
-			{
-				[self.activityViewController setCompletionHandler:^(NSString *activityType, BOOL completed) {
-					[selfBlock hideControlsAfterDelay];
-					selfBlock.activityViewController = nil;
-				}];
-			}
-
-			if (UI_USER_INTERFACE_IDIOM() == UIUserInterfaceIdiomPhone) {
-				[self presentViewController:self.activityViewController animated:YES completion:nil];
-			}
-			else { // iPad
-				UIPopoverController *popover = [[UIPopoverController alloc] initWithContentViewController:self.activityViewController];
-				[popover presentPopoverFromRect:CGRectMake(self.view.frame.size.width/2, self.view.frame.size.height/4, 0, 0)
-										 inView:self.view permittedArrowDirections:UIPopoverArrowDirectionAny
-									   animated:YES];
-			}
+            
+            if (SYSTEM_VERSION_GREATER_THAN_OR_EQUAL_TO(@"8.0"))
+            {
+                [self.activityViewController setCompletionWithItemsHandler:^(NSString *activityType, BOOL completed, NSArray *returnedItems, NSError *activityError) {
+                    [selfBlock hideControlsAfterDelay];
+                    selfBlock.activityViewController = nil;
+                    if ([activityType isEqual:UIActivityTypeSaveToCameraRoll]) {
+                        dispatch_async(dispatch_get_main_queue(), ^{
+                            if (completed) {
+                                [SVProgressHUD showSuccessWithStatus:@"已保存"];
+                            }else{
+                                [SVProgressHUD showErrorWithStatus:@"保存失败"];
+                            }
+                            dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(0.8 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
+                                [SVProgressHUD dismiss];
+                            });
+                        });
+                    }
+                }];
+            }
+            else
+            {
+                [self.activityViewController setCompletionHandler:^(NSString *activityType, BOOL completed) {
+                    [selfBlock hideControlsAfterDelay];
+                    selfBlock.activityViewController = nil;
+                }];
+            }
+            
+            if (UI_USER_INTERFACE_IDIOM() == UIUserInterfaceIdiomPhone) {
+                [self presentViewController:self.activityViewController animated:YES completion:nil];
+            }
+            else { // iPad
+                UIPopoverController *popover = [[UIPopoverController alloc] initWithContentViewController:self.activityViewController];
+                [popover presentPopoverFromRect:CGRectMake(self.view.frame.size.width/2, self.view.frame.size.height/4, 0, 0)
+                                         inView:self.view permittedArrowDirections:UIPopoverArrowDirectionAny
+                                       animated:YES];
+            }
         }
         else
         {
-            // Action sheet
+                // Action sheet
             self.actionsSheet = [UIActionSheet new];
             self.actionsSheet.delegate = self;
             for(NSString *action in _actionButtonTitles) {
                 [self.actionsSheet addButtonWithTitle:action];
             }
-
+            
             self.actionsSheet.cancelButtonIndex = [self.actionsSheet addButtonWithTitle:IDMPhotoBrowserLocalizedStrings(@"Cancel")];
             self.actionsSheet.actionSheetStyle = UIActionSheetStyleBlackTranslucent;
-
+            
             if (UI_USER_INTERFACE_IDIOM() == UIUserInterfaceIdiomPhone) {
-				[_actionsSheet showInView:self.view];
+                [_actionsSheet showInView:self.view];
             } else {
-                [_actionsSheet showFromBarButtonItem:sender animated:YES];
+                [_actionsSheet showFromBarButtonItem:_actionButton animated:YES];
             }
         }
-
-        // Keep controls hidden
+        
+            // Keep controls hidden
         [self setControlsHidden:NO animated:YES permanent:YES];
     }
+}
+
+- (void)doneButtonPressed:(id)sender {
+    [self dismissBrowser];
+}
+
+- (void)actionButtonPressed:(id)sender {
+    [self showActionForCurrentImageView];
 }
 
 #pragma mark - Action Sheet Delegate

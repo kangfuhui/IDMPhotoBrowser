@@ -8,6 +8,10 @@
 
 #import "IDMTapDetectingImageView.h"
 
+@interface IDMTapDetectingImageView ()<UIActionSheetDelegate>
+@property (nonatomic, strong) UILongPressGestureRecognizer *longPressGesture;
+@end
+
 @implementation IDMTapDetectingImageView
 
 @synthesize tapDelegate;
@@ -15,6 +19,7 @@
 - (id)initWithFrame:(CGRect)frame {
 	if ((self = [super initWithFrame:frame])) {
 		self.userInteractionEnabled = YES;
+        [self addGestureRecognizer:self.longPressGesture];
 	}
 	return self;
 }
@@ -22,6 +27,7 @@
 - (id)initWithImage:(UIImage *)image {
 	if ((self = [super initWithImage:image])) {
 		self.userInteractionEnabled = YES;
+        [self addGestureRecognizer:self.longPressGesture];
 	}
 	return self;
 }
@@ -29,6 +35,7 @@
 - (id)initWithImage:(UIImage *)image highlightedImage:(UIImage *)highlightedImage {
 	if ((self = [super initWithImage:image highlightedImage:highlightedImage])) {
 		self.userInteractionEnabled = YES;
+        [self addGestureRecognizer:self.longPressGesture];
 	}
 	return self;
 }
@@ -67,4 +74,19 @@
 		[tapDelegate imageView:self tripleTapDetected:touch];
 }
 
+- (void)handleLongPress:(UILongPressGestureRecognizer*)longPressGesture{
+    if ([tapDelegate respondsToSelector:@selector(imageView:longPressed:)]) {
+        [tapDelegate imageView:self longPressed:longPressGesture];
+    }
+}
+
+#pragma -mark getters & setters
+- (UILongPressGestureRecognizer*)longPressGesture
+{
+    if (!_longPressGesture) {
+        _longPressGesture = [[UILongPressGestureRecognizer alloc]initWithTarget:self action:@selector(handleLongPress:)];
+        self.userInteractionEnabled = YES;
+    }
+    return _longPressGesture;
+}
 @end

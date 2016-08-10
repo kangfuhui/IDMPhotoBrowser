@@ -293,6 +293,9 @@
 - (void)imageView:(UIImageView *)imageView doubleTapDetected:(UITouch *)touch {
     [self handleDoubleTap:[touch locationInView:imageView]];
 }
+- (void)imageView:(UIImageView *)imageView longPressed:(UILongPressGestureRecognizer *)longPressed{
+    [_photoBrowser showActionForCurrentImageView];
+}
 
 // Background View
 - (void)view:(UIView *)view singleTapDetected:(UITouch *)touch {

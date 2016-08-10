@@ -86,4 +86,5 @@
 - (id<IDMPhoto>)photoAtIndex:(NSUInteger)index;
 
 - (void)dismissBrowser;
+- (void)showActionForCurrentImageView;
 @end
