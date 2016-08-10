@@ -75,8 +75,10 @@
 }
 
 - (void)handleLongPress:(UILongPressGestureRecognizer*)longPressGesture{
-    if ([tapDelegate respondsToSelector:@selector(imageView:longPressed:)]) {
-        [tapDelegate imageView:self longPressed:longPressGesture];
+    if (longPressGesture.state == UIGestureRecognizerStateBegan) {
+        if ([tapDelegate respondsToSelector:@selector(imageView:longPressed:)]) {
+            [tapDelegate imageView:self longPressed:longPressGesture];
+        }
     }
 }
 
