@@ -9,7 +9,6 @@
 #import <QuartzCore/QuartzCore.h>
 #import "IDMPhotoBrowser.h"
 #import "IDMZoomingScrollView.h"
-#import "SVProgressHUD.h"
 #import "pop/POP.h"
 
 #ifndef IDMPhotoBrowserLocalizedStrings
@@ -1286,6 +1285,19 @@ NSLocalizedStringFromTableInBundle((key), nil, [NSBundle bundleWithPath:[[NSBund
 }
 
 - (void)showActionForCurrentImageView{
+    if ([self.delegate respondsToSelector:@selector(photoBrowser:longPressPhoto: inIndex:)]) {
+        id <IDMPhoto> photo = [self photoAtIndex:_currentPageIndex];
+        if ([self numberOfPhotos] > 0 && [photo underlyingImage]) {
+            [self.delegate photoBrowser:self longPressPhoto:photo inIndex:_currentPageIndex];
+        }
+    }
+}
+
+- (void)doneButtonPressed:(id)sender {
+    [self dismissBrowser];
+}
+
+- (void)actionButtonPressed:(id)sender {
     id <IDMPhoto> photo = [self photoAtIndex:_currentPageIndex];
     
     if ([self numberOfPhotos] > 0 && [photo underlyingImage]) {
@@ -1304,18 +1316,6 @@ NSLocalizedStringFromTableInBundle((key), nil, [NSBundle bundleWithPath:[[NSBund
                 [self.activityViewController setCompletionWithItemsHandler:^(NSString *activityType, BOOL completed, NSArray *returnedItems, NSError *activityError) {
                     [selfBlock hideControlsAfterDelay];
                     selfBlock.activityViewController = nil;
-                    if ([activityType isEqual:UIActivityTypeSaveToCameraRoll]) {
-                        dispatch_async(dispatch_get_main_queue(), ^{
-                            if (completed) {
-                                [SVProgressHUD showSuccessWithStatus:@"已保存"];
-                            }else{
-                                [SVProgressHUD showErrorWithStatus:@"保存失败"];
-                            }
-                            dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(0.8 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
-                                [SVProgressHUD dismiss];
-                            });
-                        });
-                    }
                 }];
             }
             else
@@ -1351,21 +1351,13 @@ NSLocalizedStringFromTableInBundle((key), nil, [NSBundle bundleWithPath:[[NSBund
             if (UI_USER_INTERFACE_IDIOM() == UIUserInterfaceIdiomPhone) {
                 [_actionsSheet showInView:self.view];
             } else {
-                [_actionsSheet showFromBarButtonItem:_actionButton animated:YES];
+                [_actionsSheet showFromBarButtonItem:sender animated:YES];
             }
         }
         
             // Keep controls hidden
         [self setControlsHidden:NO animated:YES permanent:YES];
     }
-}
-
-- (void)doneButtonPressed:(id)sender {
-    [self dismissBrowser];
-}
-
-- (void)actionButtonPressed:(id)sender {
-    [self showActionForCurrentImageView];
 }
 
 #pragma mark - Action Sheet Delegate
