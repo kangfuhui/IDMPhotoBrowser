@@ -661,10 +661,11 @@ NSLocalizedStringFromTableInBundle((key), nil, [NSBundle bundleWithPath:[[NSBund
     _counterButton = [[UIBarButtonItem alloc] initWithCustomView:_counterLabel];
 
     // Action Button
-    _actionButton = [[UIBarButtonItem alloc]initWithImage:[UIImage imageNamed:@"IDMPhotoBrowser.bundle/images/IDMPhotoBrowser_sideBarMenu"]
-                                                    style:UIBarButtonItemStylePlain
-                                                   target:self
-                                                   action:@selector(actionButtonPressed:)];
+    UIButton *button = [UIButton buttonWithType:UIButtonTypeCustom];
+    [button setImage:[UIImage imageNamed:@"IDMPhotoBrowser.bundle/images/IDMPhotoBrowser_sideBarMenu"] forState:UIControlStateNormal];
+    [button addTarget:self action:@selector(actionButtonPressed:) forControlEvents:UIControlEventTouchUpInside];
+    button.frame = CGRectMake(0, 0, 44, 44);
+    _actionButton = [[UIBarButtonItem alloc]initWithCustomView:button];
 
     // Gesture
     _panGesture = [[UIPanGestureRecognizer alloc] initWithTarget:self action:@selector(panGestureRecognized:)];
