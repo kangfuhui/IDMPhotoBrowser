@@ -661,9 +661,10 @@ NSLocalizedStringFromTableInBundle((key), nil, [NSBundle bundleWithPath:[[NSBund
     _counterButton = [[UIBarButtonItem alloc] initWithCustomView:_counterLabel];
 
     // Action Button
-    _actionButton = [[UIBarButtonItem alloc] initWithBarButtonSystemItem:UIBarButtonSystemItemAction
-                                                                  target:self
-                                                                  action:@selector(actionButtonPressed:)];
+    _actionButton = [[UIBarButtonItem alloc]initWithImage:[UIImage imageNamed:@"IDMPhotoBrowser.bundle/images/IDMPhotoBrowser_sideBarMenu"]
+                                                    style:UIBarButtonItemStylePlain
+                                                   target:self
+                                                   action:@selector(actionButtonPressed:)];
 
     // Gesture
     _panGesture = [[UIPanGestureRecognizer alloc] initWithTarget:self action:@selector(panGestureRecognized:)];
@@ -1291,7 +1292,67 @@ NSLocalizedStringFromTableInBundle((key), nil, [NSBundle bundleWithPath:[[NSBund
             [self.delegate photoBrowser:self longPressPhoto:photo inIndex:_currentPageIndex];
         }
     }else{
-        [self actionButtonPressed:_actionButton];
+        id <IDMPhoto> photo = [self photoAtIndex:_currentPageIndex];
+        
+        if ([self numberOfPhotos] > 0 && [photo underlyingImage]) {
+            if(!_actionButtonTitles)
+            {
+                    // Activity view
+                NSMutableArray *activityItems = [NSMutableArray arrayWithObject:[photo underlyingImage]];
+                if (photo.caption) [activityItems addObject:photo.caption];
+                
+                self.activityViewController = [[UIActivityViewController alloc] initWithActivityItems:activityItems applicationActivities:nil];
+                
+                __typeof__(self) __weak selfBlock = self;
+                
+                if (SYSTEM_VERSION_GREATER_THAN_OR_EQUAL_TO(@"8.0"))
+                {
+                    [self.activityViewController setCompletionWithItemsHandler:^(NSString *activityType, BOOL completed, NSArray *returnedItems, NSError *activityError) {
+                        [selfBlock hideControlsAfterDelay];
+                        selfBlock.activityViewController = nil;
+                    }];
+                }
+                else
+                {
+                    [self.activityViewController setCompletionHandler:^(NSString *activityType, BOOL completed) {
+                        [selfBlock hideControlsAfterDelay];
+                        selfBlock.activityViewController = nil;
+                    }];
+                }
+                
+                if (UI_USER_INTERFACE_IDIOM() == UIUserInterfaceIdiomPhone) {
+                    [self presentViewController:self.activityViewController animated:YES completion:nil];
+                }
+                else { // iPad
+                    UIPopoverController *popover = [[UIPopoverController alloc] initWithContentViewController:self.activityViewController];
+                    [popover presentPopoverFromRect:CGRectMake(self.view.frame.size.width/2, self.view.frame.size.height/4, 0, 0)
+                                             inView:self.view permittedArrowDirections:UIPopoverArrowDirectionAny
+                                           animated:YES];
+                }
+            }
+            else
+            {
+                    // Action sheet
+                self.actionsSheet = [UIActionSheet new];
+                self.actionsSheet.delegate = self;
+                for(NSString *action in _actionButtonTitles) {
+                    [self.actionsSheet addButtonWithTitle:action];
+                }
+                
+                self.actionsSheet.cancelButtonIndex = [self.actionsSheet addButtonWithTitle:IDMPhotoBrowserLocalizedStrings(@"Cancel")];
+                self.actionsSheet.actionSheetStyle = UIActionSheetStyleBlackTranslucent;
+                
+                if (UI_USER_INTERFACE_IDIOM() == UIUserInterfaceIdiomPhone) {
+                    [_actionsSheet showInView:self.view];
+                } else {
+                    [_actionsSheet showFromBarButtonItem:_actionButton animated:YES];
+                }
+            }
+            
+                // Keep controls hidden
+            [self setControlsHidden:NO animated:YES permanent:YES];
+        }
+        
     }
 }
 
@@ -1300,66 +1361,7 @@ NSLocalizedStringFromTableInBundle((key), nil, [NSBundle bundleWithPath:[[NSBund
 }
 
 - (void)actionButtonPressed:(id)sender {
-    id <IDMPhoto> photo = [self photoAtIndex:_currentPageIndex];
-    
-    if ([self numberOfPhotos] > 0 && [photo underlyingImage]) {
-        if(!_actionButtonTitles)
-        {
-                // Activity view
-            NSMutableArray *activityItems = [NSMutableArray arrayWithObject:[photo underlyingImage]];
-            if (photo.caption) [activityItems addObject:photo.caption];
-            
-            self.activityViewController = [[UIActivityViewController alloc] initWithActivityItems:activityItems applicationActivities:nil];
-            
-            __typeof__(self) __weak selfBlock = self;
-            
-            if (SYSTEM_VERSION_GREATER_THAN_OR_EQUAL_TO(@"8.0"))
-            {
-                [self.activityViewController setCompletionWithItemsHandler:^(NSString *activityType, BOOL completed, NSArray *returnedItems, NSError *activityError) {
-                    [selfBlock hideControlsAfterDelay];
-                    selfBlock.activityViewController = nil;
-                }];
-            }
-            else
-            {
-                [self.activityViewController setCompletionHandler:^(NSString *activityType, BOOL completed) {
-                    [selfBlock hideControlsAfterDelay];
-                    selfBlock.activityViewController = nil;
-                }];
-            }
-            
-            if (UI_USER_INTERFACE_IDIOM() == UIUserInterfaceIdiomPhone) {
-                [self presentViewController:self.activityViewController animated:YES completion:nil];
-            }
-            else { // iPad
-                UIPopoverController *popover = [[UIPopoverController alloc] initWithContentViewController:self.activityViewController];
-                [popover presentPopoverFromRect:CGRectMake(self.view.frame.size.width/2, self.view.frame.size.height/4, 0, 0)
-                                         inView:self.view permittedArrowDirections:UIPopoverArrowDirectionAny
-                                       animated:YES];
-            }
-        }
-        else
-        {
-                // Action sheet
-            self.actionsSheet = [UIActionSheet new];
-            self.actionsSheet.delegate = self;
-            for(NSString *action in _actionButtonTitles) {
-                [self.actionsSheet addButtonWithTitle:action];
-            }
-            
-            self.actionsSheet.cancelButtonIndex = [self.actionsSheet addButtonWithTitle:IDMPhotoBrowserLocalizedStrings(@"Cancel")];
-            self.actionsSheet.actionSheetStyle = UIActionSheetStyleBlackTranslucent;
-            
-            if (UI_USER_INTERFACE_IDIOM() == UIUserInterfaceIdiomPhone) {
-                [_actionsSheet showInView:self.view];
-            } else {
-                [_actionsSheet showFromBarButtonItem:sender animated:YES];
-            }
-        }
-        
-            // Keep controls hidden
-        [self setControlsHidden:NO animated:YES permanent:YES];
-    }
+    [self showActionForCurrentImageView];
 }
 
 #pragma mark - Action Sheet Delegate
